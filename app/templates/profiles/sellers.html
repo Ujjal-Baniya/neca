@@ -1,0 +1,112 @@
+{% extends 'layouts/base.html' %}
+
+{% block title %}Service Providers - Service Marketplace{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h1 class="mb-4">Service Providers</h1>
+    
+    <div class="row">
+        {% if sellers.items %}
+            {% for seller in sellers.items %}
+            <div class="col-md-6 col-lg-4 mb-4">
+                <div class="card h-100">
+                    <div class="card-body text-center">
+                        {% if seller.profile_image %}
+                        <img src="{{ url_for('static', filename='uploads/profiles/' + seller.profile_image) }}" alt="{{ seller.username }}" class="rounded-circle mb-3" style="width: 100px; height: 100px; object-fit: cover;">
+                        {% else %}
+                        <i class="fas fa-user-circle fa-5x mb-3 text-secondary"></i>
+                        {% endif %}
+                        
+                        <h5 class="card-title">{{ seller.username }}</h5>
+                        
+                        <div class="mb-2">
+                            {% if seller.avg_rating %}
+                            <div class="star-rating">
+                                {% for i in range(1, 6) %}
+                                <i class="{% if i <= seller.avg_rating|round(0, 'floor') %}fas{% else %}far{% endif %} fa-star"></i>
+                                {% endfor %}
+                            </div>
+                            <small class="text-muted">{{ seller.avg_rating }} ({{ seller.review_count }})</small>
+                            {% else %}
+                            <small class="text-muted">No ratings yet</small>
+                            {% endif %}
+                        </div>
+                        
+                        {% if seller.bio %}
+                        <p class="card-text">{{ seller.bio|truncate(100) }}</p>
+                        {% else %}
+                        <p class="card-text text-muted">No bio provided</p>
+                        {% endif %}
+                        
+                        <div class="d-grid gap-2">
+                            <a href="{{ url_for('profiles.view', user_id=seller.id) }}" class="btn btn-primary">View Profile</a>
+                            <a href="{{ url_for('services.by_seller', seller_id=seller.id) }}" class="btn btn-outline-primary">View Services</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        {% else %}
+            <div class="col-12 text-center py-5">
+                <i class="fas fa-users fa-3x mb-3 text-muted"></i>
+                <h3>No service providers found</h3>
+                <p>Check back later for available service providers.</p>
+            </div>
+        {% endif %}
+    </div>
+    
+    <!-- Pagination -->
+    {% if sellers.pages > 1 %}
+    <nav aria-label="Page navigation" class="mt-4">
+        <ul class="pagination justify-content-center">
+            {% if sellers.has_prev %}
+            <li class="page-item">
+                <a class="page-link" href="{{ url_for('profiles.sellers', page=sellers.prev_num) }}" aria-label="Previous">
+                    <span aria-hidden="true">&laquo;</span>
+                </a>
+            </li>
+            {% else %}
+            <li class="page-item disabled">
+                <a class="page-link" href="#" aria-label="Previous">
+                    <span aria-hidden="true">&laquo;</span>
+                </a>
+            </li>
+            {% endif %}
+            
+            {% for page_num in sellers.iter_pages(left_edge=2, left_current=2, right_current=3, right_edge=2) %}
+                {% if page_num %}
+                    {% if sellers.page == page_num %}
+                    <li class="page-item active">
+                        <a class="page-link" href="{{ url_for('profiles.sellers', page=page_num) }}">{{ page_num }}</a>
+                    </li>
+                    {% else %}
+                    <li class="page-item">
+                        <a class="page-link" href="{{ url_for('profiles.sellers', page=page_num) }}">{{ page_num }}</a>
+                    </li>
+                    {% endif %}
+                {% else %}
+                <li class="page-item disabled">
+                    <a class="page-link" href="#">...</a>
+                </li>
+                {% endif %}
+            {% endfor %}
+            
+            {% if sellers.has_next %}
+            <li class="page-item">
+                <a class="page-link" href="{{ url_for('profiles.sellers', page=sellers.next_num) }}" aria-label="Next">
+                    <span aria-hidden="true">&raquo;</span>
+                </a>
+            </li>
+            {% else %}
+            <li class="page-item disabled">
+                <a class="page-link" href="#" aria-label="Next">
+                    <span aria-hidden="true">&raquo;</span>
+                </a>
+            </li>
+            {% endif %}
+        </ul>
+    </nav>
+    {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,253 @@
+{% extends 'layouts/base.html' %}
+
+{% block title %}Service Marketplace - Find Local Services{% endblock %}
+
+{% block content %}
+<!-- Hero Section -->
+<section class="hero">
+    <div class="container">
+        <div class="row align-items-center">
+            <div class="col-md-6">
+                <h1>Find Local Services</h1>
+                <p>Connect with trusted service providers in your area. From home repairs to professional services, find exactly what you need.</p>
+                <a href="{{ url_for('services.index') }}" class="btn btn-light btn-lg">Explore Services</a>
+                {% if not current_user.is_authenticated %}
+                <a href="{{ url_for('auth.register') }}" class="btn btn-outline-light btn-lg ms-2">Join Now</a>
+                {% endif %}
+            </div>
+            <div class="col-md-6 d-none d-md-block">
+                <img src="{{ url_for('static', filename='img/hero-image.png') }}" alt="Service Marketplace" class="img-fluid rounded">
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Search Section -->
+<section class="container">
+    <div class="search-form">
+        <h3 class="mb-4 text-center">Search for Services</h3>
+        <form action="{{ url_for('services.index') }}" method="get">
+            <div class="row g-3">
+                <div class="col-md-4">
+                    <div class="form-floating">
+                        <input type="text" class="form-control" id="query" name="query" placeholder="What service do you need?">
+                        <label for="query">What service do you need?</label>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="form-floating">
+                        <input type="text" class="form-control" id="location" name="location" placeholder="Location">
+                        <label for="location">Location</label>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="form-floating">
+                        <select class="form-select" id="category_id" name="category_id">
+                            <option value="0">All Categories</option>
+                            {% for category in categories %}
+                            <option value="{{ category.id }}">{{ category.name }}</option>
+                            {% endfor %}
+                        </select>
+                        <label for="category_id">Category</label>
+                    </div>
+                </div>
+                <div class="col-md-2">
+                    <button type="submit" class="btn btn-primary h-100 w-100">Search</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</section>
+
+<!-- Featured Services Section -->
+<section class="container">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>Featured Services</h2>
+        <a href="{{ url_for('services.index') }}" class="btn btn-outline-primary">View All</a>
+    </div>
+    
+    <div class="row">
+        {% for service in featured_services.items %}
+        <div class="col-md-6 col-lg-4 mb-4">
+            <div class="card service-card h-100">
+                {% if service.images %}
+                <img src="{{ url_for('static', filename='uploads/services/' + service.primary_image.filename) }}" class="card-img-top" alt="{{ service.title }}">
+                {% else %}
+                <img src="{{ url_for('static', filename='img/service-placeholder.jpg') }}" class="card-img-top" alt="{{ service.title }}">
+                {% endif %}
+                <div class="card-body">
+                    <h5 class="card-title">{{ service.title }}</h5>
+                    <p class="card-text text-truncate">{{ service.description }}</p>
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div class="service-price">
+                            ${{ "%.2f"|format(service.price) }}
+                            {% if service.price_type == 'hourly' %}
+                            <small class="text-muted">/hour</small>
+                            {% endif %}
+                        </div>
+                        <div class="service-rating">
+                            {% if service.avg_rating %}
+                            <span class="star-rating">
+                                {% for i in range(1, 6) %}
+                                <i class="{% if i <= service.avg_rating|round(0, 'floor') %}fas{% else %}far{% endif %} fa-star"></i>
+                                {% endfor %}
+                            </span>
+                            <small class="text-muted">({{ service.review_count }})</small>
+                            {% else %}
+                            <small class="text-muted">No ratings yet</small>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="service-location mt-2">
+                        <i class="fas fa-map-marker-alt"></i> {{ service.location }}
+                    </div>
+                </div>
+                <div class="card-footer bg-white">
+                    <a href="{{ url_for('services.view', service_id=service.id) }}" class="btn btn-primary w-100">View Details</a>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    
+    <!-- Pagination -->
+    {% if featured_services.pages > 1 %}
+    <nav aria-label="Page navigation" class="mt-4">
+        <ul class="pagination justify-content-center">
+            {% if featured_services.has_prev %}
+            <li class="page-item">
+                <a class="page-link" href="{{ url_for('main.index', page=featured_services.prev_num) }}" aria-label="Previous">
+                    <span aria-hidden="true">&laquo;</span>
+                </a>
+            </li>
+            {% else %}
+            <li class="page-item disabled">
+                <a class="page-link" href="#" aria-label="Previous">
+                    <span aria-hidden="true">&laquo;</span>
+                </a>
+            </li>
+            {% endif %}
+            
+            {% for page_num in featured_services.iter_pages(left_edge=2, left_current=2, right_current=3, right_edge=2) %}
+                {% if page_num %}
+                    {% if featured_services.page == page_num %}
+                    <li class="page-item active">
+                        <a class="page-link" href="{{ url_for('main.index', page=page_num) }}">{{ page_num }}</a>
+                    </li>
+                    {% else %}
+                    <li class="page-item">
+                        <a class="page-link" href="{{ url_for('main.index', page=page_num) }}">{{ page_num }}</a>
+                    </li>
+                    {% endif %}
+                {% else %}
+                <li class="page-item disabled">
+                    <a class="page-link" href="#">...</a>
+                </li>
+                {% endif %}
+            {% endfor %}
+            
+            {% if featured_services.has_next %}
+            <li class="page-item">
+                <a class="page-link" href="{{ url_for('main.index', page=featured_services.next_num) }}" aria-label="Next">
+                    <span aria-hidden="true">&raquo;</span>
+                </a>
+            </li>
+            {% else %}
+            <li class="page-item disabled">
+                <a class="page-link" href="#" aria-label="Next">
+                    <span aria-hidden="true">&raquo;</span>
+                </a>
+            </li>
+            {% endif %}
+        </ul>
+    </nav>
+    {% endif %}
+</section>
+
+<!-- Categories Section -->
+<section class="container mt-5">
+    <h2 class="mb-4">Browse by Category</h2>
+    <div class="row">
+        {% for category in categories %}
+        <div class="col-6 col-md-4 col-lg-3 mb-4">
+            <a href="{{ url_for('services.index', category_id=category.id) }}" class="text-decoration-none">
+                <div class="card text-center h-100">
+                    <div class="card-body">
+                        <i class="fas fa-tools fa-3x mb-3 text-primary"></i>
+                        <h5 class="card-title">{{ category.name }}</h5>
+                        <p class="card-text small text-muted">{{ category.description }}</p>
+                    </div>
+                </div>
+            </a>
+        </div>
+        {% endfor %}
+    </div>
+</section>
+
+<!-- How It Works Section -->
+<section class="container mt-5">
+    <h2 class="text-center mb-5">How It Works</h2>
+    <div class="row text-center">
+        <div class="col-md-4 mb-4">
+            <div class="p-4">
+                <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center mx-auto mb-4" style="width: 80px; height: 80px;">
+                    <i class="fas fa-search fa-2x"></i>
+                </div>
+                <h4>Search</h4>
+                <p>Browse through services or search for specific ones based on your needs and location.</p>
+            </div>
+        </div>
+        <div class="col-md-4 mb-4">
+            <div class="p-4">
+                <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center mx-auto mb-4" style="width: 80px; height: 80px;">
+                    <i class="fas fa-comments fa-2x"></i>
+                </div>
+                <h4>Connect</h4>
+                <p>Contact service providers directly through our messaging system to discuss your needs.</p>
+            </div>
+        </div>
+        <div class="col-md-4 mb-4">
+            <div class="p-4">
+                <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center mx-auto mb-4" style="width: 80px; height: 80px;">
+                    <i class="fas fa-star fa-2x"></i>
+                </div>
+                <h4>Review</h4>
+                <p>After the service is completed, leave a review to help others find great service providers.</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Latest Services Section -->
+<section class="container mt-5">
+    <h2 class="mb-4">Latest Services</h2>
+    <div class="row">
+        {% for service in latest_services %}
+        <div class="col-md-6 col-lg-3 mb-4">
+            <div class="card service-card h-100">
+                {% if service.images %}
+                <img src="{{ url_for('static', filename='uploads/services/' + service.primary_image.filename) }}" class="card-img-top" alt="{{ service.title }}">
+                {% else %}
+                <img src="{{ url_for('static', filename='img/service-placeholder.jpg') }}" class="card-img-top" alt="{{ service.title }}">
+                {% endif %}
+                <div class="card-body">
+                    <h6 class="card-title">{{ service.title }}</h6>
+                    <div class="service-price">
+                        ${{ "%.2f"|format(service.price) }}
+                        {% if service.price_type == 'hourly' %}
+                        <small class="text-muted">/hour</small>
+                        {% endif %}
+                    </div>
+                    <div class="service-location mt-1 small">
+                        <i class="fas fa-map-marker-alt"></i> {{ service.location }}
+                    </div>
+                </div>
+                <div class="card-footer bg-white p-2">
+                    <a href="{{ url_for('services.view', service_id=service.id) }}" class="btn btn-sm btn-outline-primary w-100">View</a>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</section>
+{% endblock %}

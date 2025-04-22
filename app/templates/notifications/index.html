@@ -1,0 +1,154 @@
+{% extends 'layouts/base.html' %}
+
+{% block title %}Notifications - Service Marketplace{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row">
+        <div class="col-md-8 mx-auto">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">Notifications</h5>
+                    <div>
+                        <form action="{{ url_for('notifications.mark_all_read') }}" method="POST" class="d-inline">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <button type="submit" class="btn btn-sm btn-outline-primary">Mark All as Read</button>
+                        </form>
+                        <form action="{{ url_for('notifications.delete_all') }}" method="POST" class="d-inline ms-2">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <button type="submit" class="btn btn-sm btn-outline-danger" onclick="return confirm('Are you sure you want to delete all notifications?')">Delete All</button>
+                        </form>
+                    </div>
+                </div>
+                <div class="notification-list">
+                    {% if notifications.items %}
+                        {% for notification in notifications.items %}
+                        <div class="notification-item {% if not notification.read %}notification-unread{% endif %}">
+                            <div class="d-flex align-items-start">
+                                <div class="notification-icon me-3">
+                                    {% if notification.type == 'message' %}
+                                    <i class="fas fa-envelope fa-lg text-primary"></i>
+                                    {% elif notification.type == 'review' %}
+                                    <i class="fas fa-star fa-lg text-warning"></i>
+                                    {% else %}
+                                    <i class="fas fa-bell fa-lg text-primary"></i>
+                                    {% endif %}
+                                </div>
+                                <div class="flex-grow-1">
+                                    <div>{{ notification.content }}</div>
+                                    <div class="notification-time">{{ notification.created_at.strftime('%b %d, %Y, %H:%M') }}</div>
+                                </div>
+                                <div class="notification-actions">
+                                    {% if not notification.read %}
+                                    <form action="{{ url_for('notifications.mark_read', notification_id=notification.id) }}" method="POST" class="d-inline">
+                                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                        <button type="submit" class="btn btn-sm btn-outline-secondary mark-notification-read" data-url="{{ url_for('notifications.mark_read', notification_id=notification.id) }}">
+                                            <i class="fas fa-check"></i>
+                                        </button>
+                                    </form>
+                                    {% endif %}
+                                    <form action="{{ url_for('notifications.delete', notification_id=notification.id) }}" method="POST" class="d-inline">
+                                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                        <button type="submit" class="btn btn-sm btn-outline-danger">
+                                            <i class="fas fa-trash-alt"></i>
+                                        </button>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    {% else %}
+                        <div class="p-4 text-center">
+                            <i class="far fa-bell-slash fa-3x mb-3 text-muted"></i>
+                            <p>You have no notifications</p>
+                        </div>
+                    {% endif %}
+                </div>
+                
+                <!-- Pagination -->
+                {% if notifications.pages > 1 %}
+                <div class="card-footer">
+                    <nav aria-label="Notification pagination">
+                        <ul class="pagination justify-content-center mb-0">
+                            {% if notifications.has_prev %}
+                            <li class="page-item">
+                                <a class="page-link" href="{{ url_for('notifications.index', page=notifications.prev_num) }}" aria-label="Previous">
+                                    <span aria-hidden="true">&laquo;</span>
+                                </a>
+                            </li>
+                            {% else %}
+                            <li class="page-item disabled">
+                                <a class="page-link" href="#" aria-label="Previous">
+                                    <span aria-hidden="true">&laquo;</span>
+                                </a>
+                            </li>
+                            {% endif %}
+                            
+                            {% for page_num in notifications.iter_pages(left_edge=1, left_current=1, right_current=2, right_edge=1) %}
+                                {% if page_num %}
+                                    {% if notifications.page == page_num %}
+                                    <li class="page-item active">
+                                        <a class="page-link" href="{{ url_for('notifications.index', page=page_num) }}">{{ page_num }}</a>
+                                    </li>
+                                    {% else %}
+                                    <li class="page-item">
+                                        <a class="page-link" href="{{ url_for('notifications.index', page=page_num) }}">{{ page_num }}</a>
+                                    </li>
+                                    {% endif %}
+                                {% else %}
+                                <li class="page-item disabled">
+                                    <a class="page-link" href="#">...</a>
+                                </li>
+                                {% endif %}
+                            {% endfor %}
+                            
+                            {% if notifications.has_next %}
+                            <li class="page-item">
+                                <a class="page-link" href="{{ url_for('notifications.index', page=notifications.next_num) }}" aria-label="Next">
+                                    <span aria-hidden="true">&raquo;</span>
+                                </a>
+                            </li>
+                            {% else %}
+                            <li class="page-item disabled">
+                                <a class="page-link" href="#" aria-label="Next">
+                                    <span aria-hidden="true">&raquo;</span>
+                                </a>
+                            </li>
+                            {% endif %}
+                        </ul>
+                    </nav>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    $(document).ready(function() {
+        // Mark notification as read via AJAX
+        $('.mark-notification-read').on('click', function(e) {
+            e.preventDefault();
+            const btn = $(this);
+            const url = btn.data('url');
+            
+            $.ajax({
+                url: url,
+                type: 'POST',
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'X-CSRFToken': '{{ csrf_token() }}'
+                },
+                success: function(response) {
+                    if (response.success) {
+                        btn.closest('.notification-item').removeClass('notification-unread');
+                        btn.remove();
+                    }
+                }
+            });
+        });
+    });
+</script>
+{% endblock %}

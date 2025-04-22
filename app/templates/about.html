@@ -1,0 +1,80 @@
+{% extends 'layouts/base.html' %}
+
+{% block title %}About Us - Service Marketplace{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row mb-5">
+        <div class="col-lg-8 mx-auto text-center">
+            <h1 class="display-4 mb-4">About Service Marketplace</h1>
+            <p class="lead">Connecting service providers with customers in a secure and user-friendly environment.</p>
+        </div>
+    </div>
+    
+    <div class="row mb-5">
+        <div class="col-md-6">
+            <img src="{{ url_for('static', filename='img/about-image.jpg') }}" alt="About Service Marketplace" class="img-fluid rounded">
+        </div>
+        <div class="col-md-6">
+            <h2>Our Mission</h2>
+            <p>Our mission is to make it easy for people to find reliable service providers for all their needs, while helping skilled professionals grow their businesses and reach new customers.</p>
+            
+            <h2 class="mt-4">Our Vision</h2>
+            <p>We envision a world where finding and booking services is as easy as shopping online, where service providers can showcase their skills and build their reputation, and where both parties can connect in a trusted environment.</p>
+            
+            <h2 class="mt-4">Our Values</h2>
+            <ul>
+                <li><strong>Trust & Safety:</strong> We prioritize creating a secure platform for all users.</li>
+                <li><strong>Quality:</strong> We promote high-quality services and fair pricing.</li>
+                <li><strong>Community:</strong> We believe in building strong community connections.</li>
+                <li><strong>Accessibility:</strong> We make services accessible to everyone, everywhere.</li>
+            </ul>
+        </div>
+    </div>
+    
+    <div class="row mb-5">
+        <div class="col-lg-8 mx-auto">
+            <h2 class="text-center mb-4">How It Works</h2>
+            <div class="row text-center">
+                <div class="col-md-4">
+                    <div class="p-4">
+                        <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center mx-auto mb-4" style="width: 80px; height: 80px;">
+                            <i class="fas fa-search fa-2x"></i>
+                        </div>
+                        <h4>Search</h4>
+                        <p>Find the right service provider for your needs using our advanced search features.</p>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="p-4">
+                        <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center mx-auto mb-4" style="width: 80px; height: 80px;">
+                            <i class="fas fa-comments fa-2x"></i>
+                        </div>
+                        <h4>Connect</h4>
+                        <p>Message providers directly to discuss your needs and get quotes.</p>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="p-4">
+                        <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center mx-auto mb-4" style="width: 80px; height: 80px;">
+                            <i class="fas fa-star fa-2x"></i>
+                        </div>
+                        <h4>Review</h4>
+                        <p>After the service, leave a review to help others find great providers.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="row mb-5">
+        <div class="col-lg-8 mx-auto text-center">
+            <h2 class="mb-4">Join Our Community</h2>
+            <p>Whether you're looking for services or want to offer your skills, Service Marketplace is the place for you.</p>
+            <div class="mt-4">
+                <a href="{{ url_for('auth.register') }}" class="btn btn-primary btn-lg">Sign Up Now</a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

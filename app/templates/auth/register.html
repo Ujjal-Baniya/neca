@@ -1,0 +1,134 @@
+{% extends 'layouts/base.html' %}
+
+{% block title %}Register - Service Marketplace{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card form-card">
+                <div class="card-body">
+                    <h2 class="card-title text-center mb-4">Create an Account</h2>
+                    
+                    <form method="POST" action="{{ url_for('auth.register') }}">
+                        {{ form.csrf_token }}
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                {{ form.username.label(class="form-label") }}
+                                {{ form.username(class="form-control", placeholder="Choose a username") }}
+                                {% if form.username.errors %}
+                                    <div class="text-danger">
+                                        {% for error in form.username.errors %}
+                                            <span>{{ error }}</span>
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                {{ form.email.label(class="form-label") }}
+                                {{ form.email(class="form-control", placeholder="Enter your email address") }}
+                                {% if form.email.errors %}
+                                    <div class="text-danger">
+                                        {% for error in form.email.errors %}
+                                            <span>{{ error }}</span>
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                {{ form.password.label(class="form-label") }}
+                                {{ form.password(class="form-control", placeholder="Choose a password") }}
+                                {% if form.password.errors %}
+                                    <div class="text-danger">
+                                        {% for error in form.password.errors %}
+                                            <span>{{ error }}</span>
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                {{ form.confirm_password.label(class="form-label") }}
+                                {{ form.confirm_password(class="form-control", placeholder="Confirm your password") }}
+                                {% if form.confirm_password.errors %}
+                                    <div class="text-danger">
+                                        {% for error in form.confirm_password.errors %}
+                                            <span>{{ error }}</span>
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            {{ form.phone.label(class="form-label") }}
+                            {{ form.phone(class="form-control", placeholder="Enter your phone number (optional)") }}
+                            {% if form.phone.errors %}
+                                <div class="text-danger">
+                                    {% for error in form.phone.errors %}
+                                        <span>{{ error }}</span>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="mb-3">
+                            <div class="form-label">I want to register as:</div>
+                            
+                            <div class="form-check">
+                                {{ form.is_consumer(class="form-check-input") }}
+                                {{ form.is_consumer.label(class="form-check-label") }}
+                            </div>
+                            
+                            <div class="form-check">
+                                {{ form.is_seller(class="form-check-input") }}
+                                {{ form.is_seller.label(class="form-check-label") }}
+                                <small class="form-text text-muted d-block">
+                                    As a service provider, you can post services and receive inquiries.
+                                </small>
+                            </div>
+                            
+                            {% if form.is_consumer.errors %}
+                                <div class="text-danger">
+                                    {% for error in form.is_consumer.errors %}
+                                        <span>{{ error }}</span>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="d-grid mb-3">
+                            {{ form.submit(class="btn btn-primary btn-lg") }}
+                        </div>
+                        
+                        <div class="text-center">
+                            <small class="text-muted">
+                                By registering, you agree to our 
+                                <a href="{{ url_for('main.terms') }}">Terms of Service</a> and 
+                                <a href="{{ url_for('main.privacy') }}">Privacy Policy</a>.
+                            </small>
+                        </div>
+                    </form>
+                    
+                    <hr>
+                    
+                    <div class="text-center">
+                        <p>Already have an account? <a href="{{ url_for('auth.login') }}">Login</a></p>
+                        
+                        <div class="mt-3">
+                            <a href="{{ url_for('auth.google_login') }}" class="btn btn-outline-secondary">
+                                <i class="fab fa-google me-2"></i> Register with Google
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

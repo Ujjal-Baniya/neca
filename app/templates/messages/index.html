@@ -1,0 +1,66 @@
+{% extends 'layouts/base.html' %}
+
+{% block title %}Messages - Service Marketplace{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h1 class="mb-4">Messages</h1>
+    
+    <div class="row">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Your Conversations</h5>
+                </div>
+                <div class="conversation-list">
+                    {% if conversations %}
+                        {% for conversation in conversations %}
+                        {% set other_user = conversation.get_other_user(current_user.id) %}
+                        <a href="{{ url_for('messages.conversation', conversation_id=conversation.id) }}" class="text-decoration-none">
+                            <div class="conversation-item">
+                                <div class="d-flex align-items-center">
+                                    {% if other_user.profile_image %}
+                                    <img src="{{ url_for('static', filename='uploads/profiles/' + other_user.profile_image) }}" alt="{{ other_user.username }}" class="rounded-circle me-3" style="width: 50px; height: 50px; object-fit: cover;">
+                                    {% else %}
+                                    <div class="rounded-circle bg-light d-flex align-items-center justify-content-center me-3" style="width: 50px; height: 50px;">
+                                        <i class="fas fa-user text-secondary"></i>
+                                    </div>
+                                    {% endif %}
+                                    
+                                    <div class="flex-grow-1 overflow-hidden">
+                                        <div class="fw-bold">{{ other_user.username }}</div>
+                                        <div class="text-muted text-truncate">
+                                            {% set last_message = conversation.messages.order_by(db.desc('created_at')).first() %}
+                                            {% if last_message %}
+                                                {% if last_message.sender_id == current_user.id %}
+                                                    <span class="text-muted">You: </span>
+                                                {% endif %}
+                                                {{ last_message.content }}
+                                                <span class="text-muted ms-2">{{ last_message.created_at.strftime('%b %d, %Y') }}</span>
+                                            {% else %}
+                                                No messages yet
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                    
+                                    {% set unread = current_user.received_messages.filter_by(conversation_id=conversation.id, read=False).count() %}
+                                    {% if unread > 0 %}
+                                    <span class="badge bg-primary rounded-pill ms-2">{{ unread }}</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </a>
+                        {% endfor %}
+                    {% else %}
+                        <div class="p-4 text-center">
+                            <i class="far fa-comment-alt fa-3x mb-3 text-muted"></i>
+                            <p>You have no conversations yet</p>
+                            <p class="text-muted">Start a conversation by contacting a service provider</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

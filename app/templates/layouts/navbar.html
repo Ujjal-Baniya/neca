@@ -1,0 +1,170 @@
+<nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+    <div class="container">
+        <a class="navbar-brand" href="{{ url_for('main.index') }}">
+            <i class="fas fa-tools me-2"></i>ServiceMarketplace
+        </a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNav">
+            <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+                <li class="nav-item">
+                    <a class="nav-link {% if request.endpoint == 'main.index' %}active{% endif %}" href="{{ url_for('main.index') }}">
+                        <i class="fas fa-home me-1"></i> Home
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link {% if request.endpoint == 'services.index' %}active{% endif %}" href="{{ url_for('services.index') }}">
+                        <i class="fas fa-list me-1"></i> Services
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link {% if request.endpoint == 'profiles.sellers' %}active{% endif %}" href="{{ url_for('profiles.sellers') }}">
+                        <i class="fas fa-users me-1"></i> Providers
+                    </a>
+                </li>
+                {% if current_user.is_authenticated and current_user.is_seller %}
+                <li class="nav-item">
+                    <a class="nav-link {% if request.endpoint == 'services.create' %}active{% endif %}" href="{{ url_for('services.create') }}">
+                        <i class="fas fa-plus-circle me-1"></i> Post Service
+                    </a>
+                </li>
+                {% endif %}
+                <li class="nav-item">
+                    <a class="nav-link {% if request.endpoint == 'main.about' %}active{% endif %}" href="{{ url_for('main.about') }}">
+                        <i class="fas fa-info-circle me-1"></i> About
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link {% if request.endpoint == 'main.contact' %}active{% endif %}" href="{{ url_for('main.contact') }}">
+                        <i class="fas fa-envelope me-1"></i> Contact
+                    </a>
+                </li>
+            </ul>
+            
+            <ul class="navbar-nav">
+                {% if current_user.is_authenticated %}
+                <!-- Notifications -->
+                <li class="nav-item dropdown">
+                    <a class="nav-link position-relative {% if request.endpoint == 'notifications.index' %}active{% endif %}" href="#" id="notificationsDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                        <i class="fas fa-bell"></i>
+                        {% if user_has_unread_notifications() %}
+                        <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" id="notification-count">
+                            {{ unread_notifications_count() }}
+                        </span>
+                        {% endif %}
+                    </a>
+                    <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="notificationsDropdown">
+                        <li><h6 class="dropdown-header">Notifications</h6></li>
+                        {% set notifications = current_user.notifications.order_by(db.desc('created_at')).limit(5).all() %}                        {% if notifications %}
+                            {% for notification in notifications %}
+                            <li>
+                                <a class="dropdown-item {% if not notification.read %}fw-bold{% endif %}" href="#">
+                                    {{ notification.content }}
+                                    <div class="text-muted small">{{ notification.created_at.strftime('%Y-%m-%d %H:%M') }}</div>
+                                </a>
+                            </li>
+                            {% endfor %}
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item text-center" href="{{ url_for('notifications.index') }}">View All</a></li>
+                        {% else %}
+                            <li><a class="dropdown-item disabled" href="#">No notifications</a></li>
+                        {% endif %}
+                    </ul>
+                </li>
+                
+                <!-- Messages -->
+                <li class="nav-item dropdown">
+                    <a class="nav-link position-relative {% if request.endpoint == 'messages.index' %}active{% endif %}" href="#" id="messagesDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                        <i class="fas fa-envelope"></i>
+                        {% if user_has_unread_messages() %}
+                        <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" id="message-count">
+                            {{ unread_messages_count() }}
+                        </span>
+                        {% endif %}
+                    </a>
+                    <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="messagesDropdown">
+                        <li><h6 class="dropdown-header">Messages</h6></li>
+                        {% set messages = current_user.received_messages.filter_by(read=False).limit(5).all() %}                        {% if messages %}
+                            {% for message in messages %}
+                            <li>
+                                <a class="dropdown-item fw-bold" href="{{ url_for('messages.conversation', conversation_id=message.conversation_id) }}">
+                                    <div>From: {{ message.sender.username }}</div>
+                                    <div class="text-truncate" style="max-width: 200px;">{{ message.content }}</div>
+                                    <div class="text-muted small">{{ message.created_at.strftime('%Y-%m-%d %H:%M') }}</div>
+                                </a>
+                            </li>
+                            {% endfor %}
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item text-center" href="{{ url_for('messages.index') }}">View All</a></li>
+                        {% else %}
+                            <li><a class="dropdown-item disabled" href="#">No unread messages</a></li>
+                        {% endif %}
+                    </ul>
+                </li>
+                
+                <!-- User Menu -->
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                        {% if current_user.profile_image %}
+                        <img src="{{ url_for('static', filename='uploads/profiles/' + current_user.profile_image) }}" alt="{{ current_user.username }}" class="rounded-circle me-1" style="width: 24px; height: 24px; object-fit: cover;">
+                        {% else %}
+                        <i class="fas fa-user-circle me-1"></i>
+                        {% endif %}
+                        {{ current_user.username }}
+                    </a>
+                    <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
+                        <li>
+                            <a class="dropdown-item" href="{{ url_for('profiles.view', user_id=current_user.id) }}">
+                                <i class="fas fa-user me-2"></i> My Profile
+                            </a>
+                        </li>
+                        <li>
+                            <a class="dropdown-item" href="{{ url_for('profiles.dashboard') }}">
+                                <i class="fas fa-tachometer-alt me-2"></i> Dashboard
+                            </a>
+                        </li>
+                        <li>
+                            <a class="dropdown-item" href="{{ url_for('messages.index') }}">
+                                <i class="fas fa-envelope me-2"></i> Messages
+                                {% if user_has_unread_messages() %}
+                                <span class="badge bg-danger">{{ unread_messages_count() }}</span>
+                                {% endif %}
+                            </a>
+                        </li>
+                        <li>
+                            <a class="dropdown-item" href="{{ url_for('auth.profile') }}">
+                                <i class="fas fa-cog me-2"></i> Settings
+                            </a>
+                        </li>
+                        {% if current_user.is_admin %}
+                        <li>
+                            <a class="dropdown-item" href="{{ url_for('admin.index') }}">
+                                <i class="fas fa-user-shield me-2"></i> Admin Panel
+                            </a>
+                        </li>
+                        {% endif %}
+                        <li><hr class="dropdown-divider"></li>
+                        <li>
+                            <a class="dropdown-item" href="{{ url_for('auth.logout') }}">
+                                <i class="fas fa-sign-out-alt me-2"></i> Logout
+                            </a>
+                        </li>
+                    </ul>
+                </li>
+                {% else %}
+                <li class="nav-item">
+                    <a class="nav-link {% if request.endpoint == 'auth.login' %}active{% endif %}" href="{{ url_for('auth.login') }}">
+                        <i class="fas fa-sign-in-alt me-1"></i> Login
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link {% if request.endpoint == 'auth.register' %}active{% endif %}" href="{{ url_for('auth.register') }}">
+                        <i class="fas fa-user-plus me-1"></i> Register
+                    </a>
+                </li>
+                {% endif %}
+            </ul>
+        </div>
+    </div>
+</nav>
