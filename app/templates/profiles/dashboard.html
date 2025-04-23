@@ -1,0 +1,316 @@
+{% extends 'layouts/base.html' %}
+
+{% block title %}Dashboard - Service Marketplace{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h1 class="mb-4">Dashboard</h1>
+    
+    <div class="row">
+        <div class="col-md-3 mb-4">
+            <div class="card">
+                <div class="card-body text-center">
+                    {% if current_user.profile_image %}
+                    <img src="{{ url_for('static', filename='uploads/profiles/' + current_user.profile_image) }}" alt="{{ current_user.username }}" class="rounded-circle mb-3" style="width: 100px; height: 100px; object-fit: cover;">
+                    {% else %}
+                    <i class="fas fa-user-circle fa-5x mb-3 text-secondary"></i>
+                    {% endif %}
+                    <h5>{{ current_user.username }}</h5>
+                    <p class="text-muted">{{ current_user.email }}</p>
+                    
+                    <div class="d-grid gap-2 mt-3">
+                        <a href="{{ url_for('profiles.view', user_id=current_user.id) }}" class="btn btn-outline-primary">View Public Profile</a>
+                        <a href="{{ url_for('auth.profile') }}" class="btn btn-outline-primary">Edit Profile</a>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="list-group mt-4">
+                <a href="{{ url_for('profiles.dashboard') }}" class="list-group-item list-group-item-action active">
+                    <i class="fas fa-tachometer-alt me-2"></i> Dashboard
+                </a>
+                {% if current_user.is_seller %}
+                <a href="{{ url_for('services.create') }}" class="list-group-item list-group-item-action">
+                    <i class="fas fa-plus-circle me-2"></i> Add Service
+                </a>
+                {% endif %}
+                <a href="{{ url_for('messages.index') }}" class="list-group-item list-group-item-action">
+                    <i class="fas fa-envelope me-2"></i> Messages
+                    {% if current_user.unread_message_count > 0 %}
+                    <span class="badge bg-danger float-end">{{ current_user.unread_message_count }}</span>
+                    {% endif %}
+                </a>
+                <a href="{{ url_for('notifications.index') }}" class="list-group-item list-group-item-action">
+                    <i class="fas fa-bell me-2"></i> Notifications
+                    {% if current_user.unread_notification_count > 0 %}
+                    <span class="badge bg-danger float-end">{{ current_user.unread_notification_count }}</span>
+                    {% endif %}
+                </a>
+                {% if current_user.is_admin %}
+                <a href="{{ url_for('admin.index') }}" class="list-group-item list-group-item-action">
+                    <i class="fas fa-user-shield me-2"></i> Admin Panel
+                </a>
+                {% endif %}
+            </div>
+        </div>
+        
+        <div class="col-md-9">
+            <!-- Quick Stats -->
+            <div class="row mb-4">
+                <div class="col-md-4">
+                    <div class="card bg-primary text-white">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <h6 class="card-title">Unread Messages</h6>
+                                    <h2 class="mb-0">{{ current_user.unread_message_count }}</h2>
+                                </div>
+                                <div>
+                                    <i class="fas fa-envelope fa-3x opacity-50"></i>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="card-footer bg-primary border-0">
+                            <a href="{{ url_for('messages.index') }}" class="text-white text-decoration-none small">View All Messages <i class="fas fa-arrow-right ms-1"></i></a>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card bg-success text-white">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <h6 class="card-title">Reviews Received</h6>
+                                    <h2 class="mb-0">{{ current_user.review_count }}</h2>
+                                </div>
+                                <div>
+                                    <i class="fas fa-star fa-3x opacity-50"></i>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="card-footer bg-success border-0">
+                            <a href="{{ url_for('reviews.for_user', user_id=current_user.id) }}" class="text-white text-decoration-none small">View All Reviews <i class="fas fa-arrow-right ms-1"></i></a>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card bg-info text-white">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <h6 class="card-title">Saved Services</h6>
+                                    <h2 class="mb-0">{{ saved_services|length }}</h2>
+                                </div>
+                                <div>
+                                    <i class="fas fa-bookmark fa-3x opacity-50"></i>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="card-footer bg-info border-0">
+                            <a href="{{ url_for('services.saved') }}" class="text-white text-decoration-none small">View Saved Services <i class="fas fa-arrow-right ms-1"></i></a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Recent Activity Tabs -->
+            <div class="card">
+                <div class="card-header">
+                    <ul class="nav nav-tabs card-header-tabs" id="dashboardTabs" role="tablist">
+                        {% if current_user.is_seller and services %}
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link active" id="services-tab" data-bs-toggle="tab" data-bs-target="#services" type="button" role="tab" aria-controls="services" aria-selected="true">My Services</button>
+                        </li>
+                        {% endif %}
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link {% if not current_user.is_seller or not services %}active{% endif %}" id="messages-tab" data-bs-toggle="tab" data-bs-target="#messages" type="button" role="tab" aria-controls="messages" aria-selected="false">Recent Messages</button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="notifications-tab" data-bs-toggle="tab" data-bs-target="#notifications" type="button" role="tab" aria-controls="notifications" aria-selected="false">Recent Notifications</button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="reviews-tab" data-bs-toggle="tab" data-bs-target="#reviews" type="button" role="tab" aria-controls="reviews" aria-selected="false">Recent Reviews</button>
+                        </li>
+                    </ul>
+                </div>
+                <div class="card-body">
+                    <div class="tab-content" id="dashboardTabsContent">
+                        <!-- My Services Tab -->
+                        {% if current_user.is_seller and services %}
+                        <div class="tab-pane fade show active" id="services" role="tabpanel" aria-labelledby="services-tab">
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <h5 class="card-title">My Services</h5>
+                                <a href="{{ url_for('services.create') }}" class="btn btn-sm btn-primary">
+                                    <i class="fas fa-plus-circle me-1"></i> Add New Service
+                                </a>
+                            </div>
+                            <div class="table-responsive">
+                                <table class="table table-hover">
+                                    <thead>
+                                        <tr>
+                                            <th>Title</th>
+                                            <th>Price</th>
+                                            <th>Location</th>
+                                            <th>Status</th>
+                                            <th>Created</th>
+                                            <th>Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for service in services %}
+                                        <tr>
+                                            <td>
+                                                <a href="{{ url_for('services.view', service_id=service.id) }}">{{ service.title }}</a>
+                                            </td>
+                                            <td>${{ "%.2f"|format(service.price) }} {% if service.price_type == 'hourly' %}<small class="text-muted">/hour</small>{% endif %}</td>
+                                            <td>{{ service.location }}</td>
+                                            <td>
+                                                {% if service.active %}
+                                                <span class="badge bg-success">Active</span>
+                                                {% else %}
+                                                <span class="badge bg-secondary">Inactive</span>
+                                                {% endif %}
+                                            </td>
+                                            <td>{{ service.created_at.strftime('%Y-%m-%d') }}</td>
+                                            <td>
+                                                <a href="{{ url_for('services.edit', service_id=service.id) }}" class="btn btn-sm btn-outline-primary">
+                                                    <i class="fas fa-edit"></i>
+                                                </a>
+                                                <button type="button" class="btn btn-sm btn-outline-danger" data-bs-toggle="modal" data-bs-target="#deleteServiceModal{{ service.id }}">
+                                                    <i class="fas fa-trash-alt"></i>
+                                                </button>
+                                                
+                                                <!-- Delete Service Modal -->
+                                                <div class="modal fade" id="deleteServiceModal{{ service.id }}" tabindex="-1" aria-labelledby="deleteServiceModalLabel{{ service.id }}" aria-hidden="true">
+                                                    <div class="modal-dialog">
+                                                        <div class="modal-content">
+                                                            <div class="modal-header">
+                                                                <h5 class="modal-title" id="deleteServiceModalLabel{{ service.id }}">Confirm Delete</h5>
+                                                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                                            </div>
+                                                            <div class="modal-body">
+                                                                Are you sure you want to delete "{{ service.title }}"? This action cannot be undone.
+                                                            </div>
+                                                            <div class="modal-footer">
+                                                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                                                                <form action="{{ url_for('services.delete', service_id=service.id) }}" method="POST">
+                                                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                                                    <button type="submit" class="btn btn-danger">Delete</button>
+                                                                </form>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                        {% endif %}
+                        
+                        <!-- Messages Tab -->
+                        <div class="tab-pane fade {% if not current_user.is_seller or not services %}show active{% endif %}" id="messages" role="tabpanel" aria-labelledby="messages-tab">
+                            <h5 class="card-title">Recent Messages</h5>
+                            {% if unread_messages %}
+                                <div class="list-group">
+                                    {% for message in unread_messages %}
+                                    <a href="{{ url_for('messages.conversation', conversation_id=message.conversation_id) }}" class="list-group-item list-group-item-action">
+                                        <div class="d-flex w-100 justify-content-between">
+                                            <h6 class="mb-1">From: {{ message.sender.username }}</h6>
+                                            <small>{{ message.created_at.strftime('%Y-%m-%d %H:%M') }}</small>
+                                        </div>
+                                        <p class="mb-1 text-truncate">{{ message.content }}</p>
+                                    </a>
+                                    {% endfor %}
+                                </div>
+                                <div class="text-center mt-3">
+                                    <a href="{{ url_for('messages.index') }}" class="btn btn-outline-primary btn-sm">View All Messages</a>
+                                </div>
+                            {% else %}
+                                <div class="text-center py-5">
+                                    <i class="far fa-envelope fa-3x mb-3 text-muted"></i>
+                                    <p>No unread messages</p>
+                                    <a href="{{ url_for('messages.index') }}" class="btn btn-outline-primary btn-sm">View All Messages</a>
+                                </div>
+                            {% endif %}
+                        </div>
+                        
+                        <!-- Notifications Tab -->
+                        <div class="tab-pane fade" id="notifications" role="tabpanel" aria-labelledby="notifications-tab">
+                            <h5 class="card-title">Recent Notifications</h5>
+                            {% if unread_notifications %}
+                                <div class="list-group">
+                                    {% for notification in unread_notifications %}
+                                    <div class="list-group-item">
+                                        <div class="d-flex w-100 justify-content-between">
+                                            <div>
+                                                {% if notification.type == 'message' %}
+                                                <i class="fas fa-envelope text-primary me-2"></i>
+                                                {% elif notification.type == 'review' %}
+                                                <i class="fas fa-star text-warning me-2"></i>
+                                                {% else %}
+                                                <i class="fas fa-bell text-primary me-2"></i>
+                                                {% endif %}
+                                                {{ notification.content }}
+                                            </div>
+                                            <small>{{ notification.created_at.strftime('%Y-%m-%d %H:%M') }}</small>
+                                        </div>
+                                    </div>
+                                    {% endfor %}
+                                </div>
+                                <div class="text-center mt-3">
+                                    <a href="{{ url_for('notifications.index') }}" class="btn btn-outline-primary btn-sm">View All Notifications</a>
+                                </div>
+                            {% else %}
+                                <div class="text-center py-5">
+                                    <i class="far fa-bell fa-3x mb-3 text-muted"></i>
+                                    <p>No unread notifications</p>
+                                    <a href="{{ url_for('notifications.index') }}" class="btn btn-outline-primary btn-sm">View All Notifications</a>
+                                </div>
+                            {% endif %}
+                        </div>
+                        
+                        <!-- Reviews Tab -->
+                        <div class="tab-pane fade" id="reviews" role="tabpanel" aria-labelledby="reviews-tab">
+                            <h5 class="card-title">Recent Reviews</h5>
+                            {% if reviews_received %}
+                                <div class="list-group">
+                                    {% for review in reviews_received %}
+                                    <div class="list-group-item">
+                                        <div class="d-flex w-100 justify-content-between">
+                                            <h6 class="mb-1">From: {{ review.reviewer.username }}</h6>
+                                            <small>{{ review.created_at.strftime('%Y-%m-%d') }}</small>
+                                        </div>
+                                        <div class="star-rating mb-1">
+                                            {% for i in range(1, 6) %}
+                                            <i class="{% if i <= review.rating %}fas{% else %}far{% endif %} fa-star"></i>
+                                            {% endfor %}
+                                        </div>
+                                        {% if review.content %}
+                                        <p class="mb-1">{{ review.content }}</p>
+                                        {% endif %}
+                                        {% if review.service %}
+                                        <small class="text-muted">For service: <a href="{{ url_for('services.view', service_id=review.service.id) }}">{{ review.service.title }}</a></small>
+                                        {% endif %}
+                                    </div>
+                                    {% endfor %}
+                                </div>
+                                <div class="text-center mt-3">
+                                    <a href="{{ url_for('reviews.for_user', user_id=current_user.id) }}" class="btn btn-outline-primary btn-sm">View All Reviews</a>
+                                </div>
+                            {% else %}
+                                <div class="text-center py-5">
+                                    <i class="far fa-star fa-3x mb-3 text-muted"></i>
+                                    <p>No reviews received</p>
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -35,7 +35,13 @@ def create_app(config_object="app.config.Config"):
     
     # Configure Socket.IO handlers
     configure_socketio()
-
+    # Add Jinja2 filters
+    @app.template_filter('nl2br')
+    def nl2br_filter(s):
+        if not s:
+            return s
+        return s.replace('\n', '<br>')
+    
     @app.context_processor
 
     def inject_now():
@@ -44,6 +50,15 @@ def create_app(config_object="app.config.Config"):
      # Register global context processors
     from app.context_processors import utility_processor
     app.context_processor(utility_processor)
+
+    upload_folder = app.config['UPLOAD_FOLDER']
+    if not os.path.exists(upload_folder):
+        os.makedirs(upload_folder, exist_ok=True)
+    
+    subdirs = ['profiles', 'services', 'reviews']
+    for subdir in subdirs:
+        directory = os.path.join(upload_folder, subdir)
+        os.makedirs(directory, exist_ok=True)
     
     return app
 

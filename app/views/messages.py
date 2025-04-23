@@ -25,7 +25,6 @@ def index():
 @messages_bp.route('/conversation/<int:conversation_id>')
 @login_required
 def conversation(conversation_id):
-    """View a conversation."""
     conversation = Conversation.query.get_or_404(conversation_id)
     
     # Ensure user is part of the conversation
@@ -35,10 +34,13 @@ def conversation(conversation_id):
     # Get the other user in the conversation
     other_user = conversation.get_other_user(current_user.id)
     
-    # Get messages for this conversation
+    # Explicitly get all messages for this conversation, ordered by timestamp
     page = request.args.get('page', 1, type=int)
-    messages = conversation.messages.order_by(Message.created_at.desc()) \
-        .paginate(page=page, per_page=current_app.config['MESSAGES_PER_PAGE'])
+    messages = Message.query.filter_by(
+        conversation_id=conversation_id
+    ).order_by(Message.created_at.asc()).paginate(
+        page=page, per_page=current_app.config['MESSAGES_PER_PAGE']
+    )
     
     # Mark unread messages as read
     unread_messages = Message.query.filter_by(

@@ -6,6 +6,8 @@ from app.models.user import User
 from app.models.service import Service
 from app.models.review import Review
 from app.forms.message import MessageForm
+from app.extensions import db
+
 
 profiles_bp = Blueprint('profiles', __name__)
 

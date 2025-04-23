@@ -253,7 +253,7 @@ def delete_image(service_id, image_id):
     flash('Image has been deleted.', 'success')
     return redirect(url_for('services.edit', service_id=service_id))
 
-@services_bp.route('/<int:service_id>/images/<int:image_id>/set-primary', methods=['POST'])
+@services_bp.route('/<int:service_id>/images/<int:image_id>/set-primary', methods=['GET', 'POST'])
 @login_required
 def set_primary_image(service_id, image_id):
     """Set an image as the primary image for a service."""
