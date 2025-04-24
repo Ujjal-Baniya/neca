@@ -14,6 +14,8 @@ from app.utils.security import generate_random_filename, allowed_file
 
 reviews_bp = Blueprint('reviews', __name__)
 
+# In app/views/reviews.py, update the create function:
+
 @reviews_bp.route('/create/<int:service_id>', methods=['GET', 'POST'])
 @login_required
 def create(service_id):
@@ -38,6 +40,10 @@ def create(service_id):
     form = ReviewForm()
     
     if form.validate_on_submit():
+        # Debug info to console
+        print(f"Form submitted with rating: {form.rating.data}")
+        print(f"Images submitted: {[img.filename for img in form.images.data if img and img.filename]}")
+        
         review = Review(
             content=form.content.data,
             rating=form.rating.data,
@@ -50,10 +56,42 @@ def create(service_id):
         db.session.commit()
         
         # Handle image uploads
+        uploaded_images = []
         if form.images.data:
-            upload_success = _save_review_images(review.id, form.images.data)
-            if not upload_success:
-                flash('Some images could not be uploaded.', 'warning')
+            for image_data in form.images.data:
+                if image_data and image_data.filename:
+                    try:
+                        # Generate secure filename
+                        filename = secure_filename(image_data.filename)
+                        random_filename = str(uuid.uuid4()) + os.path.splitext(filename)[1]
+                        
+                        # Ensure upload directory exists
+                        upload_folder = os.path.join(current_app.config['UPLOAD_FOLDER'], 'reviews')
+                        os.makedirs(upload_folder, exist_ok=True)
+                        
+                        # Debug info
+                        print(f"Saving image to {upload_folder}/{random_filename}")
+                        
+                        # Save the image
+                        image_path = os.path.join(upload_folder, random_filename)
+                        image_data.save(image_path)
+                        
+                        # Create database record
+                        review_image = ReviewImage(
+                            filename=random_filename,
+                            original_filename=filename,
+                            review_id=review.id
+                        )
+                        
+                        db.session.add(review_image)
+                        uploaded_images.append(review_image)
+                    except Exception as e:
+                        print(f"Error saving review image: {e}")
+                        current_app.logger.error(f"Error saving review image: {e}")
+        
+        if uploaded_images:
+            db.session.commit()
+            flash(f'Successfully uploaded {len(uploaded_images)} images.', 'success')
         
         # Create notification for service owner
         notification_content = f"{current_user.username} left a review for your service \"{service.title}\""
@@ -82,14 +120,54 @@ def edit(review_id):
     form = ReviewForm(obj=review)
     
     if form.validate_on_submit():
+        # Make sure rating is provided
+        if not form.rating.data:
+            flash('Please select a rating.', 'danger')
+            return render_template('reviews/edit.html', form=form, review=review)
+        
+        # Update review data
         review.content = form.content.data
         review.rating = form.rating.data
         
         # Handle image uploads
-        if form.images.data and any(image.filename for image in form.images.data):
-            upload_success = _save_review_images(review.id, form.images.data)
-            if not upload_success:
-                flash('Some images could not be uploaded.', 'warning')
+        uploaded_files = request.files.getlist('images')
+        
+        if uploaded_files and any(f.filename for f in uploaded_files):
+            upload_folder = os.path.join(current_app.config['UPLOAD_FOLDER'], 'reviews')
+            os.makedirs(upload_folder, exist_ok=True)
+            
+            # Count existing images
+            existing_count = ReviewImage.query.filter_by(review_id=review.id).count()
+            uploaded_count = 0
+            
+            for file in uploaded_files:
+                if file and file.filename:
+                    # Limit total images to 3
+                    if existing_count + uploaded_count >= 3:
+                        break
+                        
+                    try:
+                        # Secure filename and make it unique
+                        filename = secure_filename(file.filename)
+                        ext = os.path.splitext(filename)[1]
+                        new_filename = f"{uuid.uuid4().hex}{ext}"
+                        
+                        # Save file
+                        file.save(os.path.join(upload_folder, new_filename))
+                        
+                        # Create database record
+                        image = ReviewImage(
+                            filename=new_filename,
+                            original_filename=filename,
+                            review_id=review.id
+                        )
+                        db.session.add(image)
+                        uploaded_count += 1
+                    except Exception as e:
+                        current_app.logger.error(f"Error uploading image: {str(e)}")
+            
+            if uploaded_count > 0:
+                flash(f'{uploaded_count} images uploaded successfully.', 'success')
         
         db.session.commit()
         flash('Your review has been updated!', 'success')
@@ -117,10 +195,15 @@ def delete(review_id):
     
     # Delete review images
     for image in review.images:
-        image_path = os.path.join(current_app.config['UPLOAD_FOLDER'], 'reviews', image.filename)
-        if os.path.exists(image_path):
-            os.remove(image_path)
+        try:
+            # Delete image file
+            image_path = os.path.join(current_app.config['UPLOAD_FOLDER'], 'reviews', image.filename)
+            if os.path.exists(image_path):
+                os.remove(image_path)
+        except Exception as e:
+            current_app.logger.error(f"Error deleting review image: {str(e)}")
     
+    # Delete review from database
     db.session.delete(review)
     db.session.commit()
     
@@ -187,27 +270,6 @@ def create_user_review(user_id):
     
     return render_template('reviews/create_user.html', form=form, user=user)
 
-@reviews_bp.route('/<int:review_id>/images/<int:image_id>/delete', methods=['POST'])
-@login_required
-def delete_image(review_id, image_id):
-    """Delete a review image."""
-    review = Review.query.get_or_404(review_id)
-    image = ReviewImage.query.get_or_404(image_id)
-    
-    # Ensure user owns the review and image
-    if review.reviewer_id != current_user.id or image.review_id != review_id:
-        abort(403)
-    
-    # Delete image file
-    image_path = os.path.join(current_app.config['UPLOAD_FOLDER'], 'reviews', image.filename)
-    if os.path.exists(image_path):
-        os.remove(image_path)
-    
-    db.session.delete(image)
-    db.session.commit()
-    
-    flash('Image has been deleted.', 'success')
-    return redirect(url_for('reviews.edit', review_id=review_id))
 
 @reviews_bp.route('/by-user/<int:user_id>')
 def by_user(user_id):

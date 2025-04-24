@@ -12,11 +12,11 @@ class ReviewForm(FlaskForm):
         Length(max=1000, message='Review must be less than 1000 characters')
     ])
     rating = RadioField('Rating', choices=[
-        ('1', '1 - Poor'),
-        ('2', '2 - Fair'),
-        ('3', '3 - Good'),
-        ('4', '4 - Very Good'),
-        ('5', '5 - Excellent')
+        (1, '1 - Poor'),
+        (2, '2 - Fair'),
+        (3, '3 - Good'),
+        (4, '4 - Very Good'),
+        (5, '5 - Excellent')
     ], validators=[DataRequired(message='Please select a rating')], coerce=int)
     images = MultipleFileField('Images (Max 3)', validators=[
         Optional(),
